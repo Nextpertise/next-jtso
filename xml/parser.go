@@ -134,7 +134,7 @@ func ParseVersion(s string) (*Version, error) {
 
 	// unmarshall xml string
 	if strings.Contains(s, "<multi-routing-engine-results>") {
-		// QFX device format (with multi-routing-engine-results)
+		// QFX & EX device format (with multi-routing-engine-results)
 		var multiResult struct {
 			Items []struct {
 				SoftwareInformation struct {
