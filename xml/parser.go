@@ -129,12 +129,12 @@ func ParseVersion(s string) (*Version, error) {
 	logger.HandlePanic()
 	var i Version
 
-	// convert in byte array
+	// Convert XML string to byte array
 	b := []byte(s)
 
-	// unmarshall xml string
+	// Unmarshal XML based on QFX or EX or ACX structure
 	if strings.Contains(s, "<multi-routing-engine-results>") {
-		// QFX & EX device format (with multi-routing-engine-results)
+		// QFX device format (with multi-routing-engine-results)
 		var multiResult struct {
 			Items []struct {
 				SoftwareInformation struct {
@@ -166,7 +166,7 @@ func ParseVersion(s string) (*Version, error) {
 		i.Ver = singleResult.JunosVersion
 	}
 
-	return &i, err
+	return &i, nil
 }
 
 // Parsing function for interfaces description
