@@ -19,7 +19,7 @@ const PATH_VMX string = "/var/shared/telegraf/vmx/telegraf.d/"
 const PATH_MX string = "/var/shared/telegraf/mx/telegraf.d/"
 const PATH_PTX string = "/var/shared//telegraf/ptx/telegraf.d/"
 const PATH_ACX string = "/var/shared//telegraf/acx/telegraf.d/"
-const PATH_EX string = "/var/shared//telegraf/ex/telegraf.d/"
+const PATH_EX string = "/var/shared//telegraf/acx/telegraf.d/"
 const PATH_GRAFANA string = "/var/shared/grafana/dashboards/"
 
 func CheckVersion(searchVersion string, routerVersion string) bool {
