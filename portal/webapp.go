@@ -687,13 +687,13 @@ func routeUptDoc(c echo.Context) error {
 		} else {
 			tele += "For ACX version " + v.Version + ": " + v.Config + "</br>"
 		}
+	}
 	for i, v := range p.Definition.TelCfg.ExCfg {
 		if i == len(p.Definition.TelCfg.ExCfg)-1 {
 			tele += "For EX version " + v.Version + ": " + v.Config
 		} else {
 			tele += "For EX version " + v.Version + ": " + v.Config + "</br>"
 		}
-
 	}
 	if tele == "" {
 		tele = "No Telegraf configuration attached to this profile"
