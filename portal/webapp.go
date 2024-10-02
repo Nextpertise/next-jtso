@@ -1,14 +1,13 @@
 package portal
 
 import (
-	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"jtso/association"
 	"jtso/config"
-	"jtso/container"
 	"jtso/influx"
 	"jtso/logger"
 	"jtso/netconf"
@@ -16,16 +15,17 @@ import (
 	"jtso/sqlite"
 	"jtso/worker"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 )
 
 const PATH_CERT string = "/var/cert/"
-const PATH_JTS_VERS string = "/etc/jtso/openjts.version"
 
 type WebApp struct {
 	listen string
@@ -114,8 +114,17 @@ func routeIndex(c echo.Context) error {
 	teleVmx, teleMx, telePtx, teleAcx, teleEx, influx, grafana, kapacitor, jtso := "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc"
 	// check containers state
 
-	containers := container.ListContainers()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		logger.Log.Errorf("Unable to open Docker session: %v", err)
 
+	}
+	defer cli.Close()
+	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	if err != nil {
+		logger.Log.Errorf("Unable to list container state: %v", err)
+
+	}
 	for _, container := range containers {
 		switch container.Names[0] {
 		case "/telegraf_vmx":
@@ -179,37 +188,12 @@ func routeIndex(c echo.Context) error {
 			}
 		case "ex":
 			if r.Profile == 1 {
-				numEX++
+				numEx++
 			}
 		}
 	}
 
-	// Retrieve module's version
-	jtsoVersion := config.JTSO_VERSION
-	jtsVersion := "N/A"
-
-	// Open the OpenJTS version's file
-	file_jts, err := os.Open(PATH_JTS_VERS)
-	if err != nil {
-		logger.Log.Errorf("Unable to open %s file: %v", PATH_JTS_VERS, err)
-	} else {
-		defer file_jts.Close()
-		scanner := bufio.NewScanner(file_jts)
-		if scanner.Scan() {
-			jtsVersion = scanner.Text()
-		}
-		// Check for any errors during scanning
-		if err := scanner.Err(); err != nil {
-			logger.Log.Errorf("Unable to parse %s file: %v", PATH_JTS_VERS, err)
-		}
-	}
-
-	// get the Telegraf version -
-	teleVersion := container.GetVersionLabel("jts_telegraf")
-
-	return c.Render(http.StatusOK, "index.html", map[string]interface{}{"TeleVmx": teleVmx, "TeleMx": teleMx, "TelePtx": telePtx, "TeleAcx": teleAcx, "TeleEx": teleEx,
-		"Grafana": grafana, "Kapacitor": kapacitor, "Influx": influx, "Jtso": jtso, "NumVMX": numVMX, "NumMX": numMX, "NumPTX": numPTX, "NumACX": numACX, "NumEX": numEX,
-		"GrafanaPort": grafanaPort, "JTS_VERS": jtsVersion, "JTSO_VERS": jtsoVersion, "JTS_TELE_VERS": teleVersion})
+	return c.Render(http.StatusOK, "index.html", map[string]interface{}{"TeleVmx": teleVmx, "TeleMx": teleMx, "TelePtx": telePtx, "TeleAcx": teleAcx, "TeleEx": teleEx, "Grafana": grafana, "Kapacitor": kapacitor, "Influx": influx, "Jtso": jtso, "NumVMX": numVMX, "NumMX": numMX, "NumPTX": numPTX, "NumACX": numACX, "NumEX": numEX, "GrafanaPort": grafanaPort})
 }
 
 func routeRouters(c echo.Context) error {
@@ -371,26 +355,6 @@ func routeDelRouter(c echo.Context) error {
 	return c.JSON(http.StatusOK, Reply{Status: "OK", Msg: "Router deleted"})
 }
 
-func checkRouterSupport(filenames []association.Config, routerVersion string) bool {
-	confToApply := ""
-	defaultConfig := ""
-	for _, c := range filenames {
-		// Save all config if present as a fallback solution if specific version not found
-		if c.Version == "all" {
-			defaultConfig = c.Config
-		} else {
-			result := association.CheckVersion(c.Version, routerVersion)
-			if result && (confToApply == "") {
-				return true
-			}
-		}
-	}
-	if defaultConfig != "" {
-		return true
-	}
-	return false
-}
-
 func routeAddProfile(c echo.Context) error {
 	var err error
 	var f bool
@@ -413,73 +377,44 @@ func routeAddProfile(c echo.Context) error {
 	}
 	// Check if a profile can be attached to a router
 	// find out the family of the router
-	fam := ""
-	version := ""
+	fam := "all"
 	for _, i := range sqlite.RtrList {
 		if i.Shortname == r.Shortname {
 			fam = i.Family
-			version = i.Version
 			break
 		}
 	}
 	// Now check for each profile there is a given Telegraf config
-	valid := false
+	valid := true
 	errString := ""
 	for _, i := range r.Profiles {
 		allTele := association.ActiveProfiles[i].Definition.TelCfg
 		switch fam {
 		case "vmx":
 			if len(allTele.VmxCfg) == 0 {
+				valid = false
 				errString += "There is no Telegraf config for profile " + i + " for the VMX platform.</br>"
-			} else {
-				if checkRouterSupport(allTele.VmxCfg, version) {
-					valid = true
-				} else {
-					errString += "There is no Telegraf config for profile " + i + " for this VMX version.</br>"
-				}
 			}
 		case "mx":
 			if len(allTele.MxCfg) == 0 {
+				valid = false
 				errString += "There is no Telegraf config for profile " + i + " for the MX platform.</br>"
-			} else {
-				if checkRouterSupport(allTele.MxCfg, version) {
-					valid = true
-				} else {
-					errString += "There is no Telegraf config for profile " + i + " for this MX version.</br>"
-				}
 			}
 		case "ptx":
 			if len(allTele.PtxCfg) == 0 {
+				valid = false
 				errString += "There is no Telegraf config for profile " + i + " for the PTX platform.</br>"
-			} else {
-				if checkRouterSupport(allTele.PtxCfg, version) {
-					valid = true
-				} else {
-					errString += "There is no Telegraf config for profile " + i + " for this PTX version.</br>"
-				}
 			}
 		case "acx":
 			if len(allTele.AcxCfg) == 0 {
+				valid = false
 				errString += "There is no Telegraf config for profile " + i + " for the ACX platform.</br>"
-			} else {
-				if checkRouterSupport(allTele.AcxCfg, version) {
-					valid = true
-				} else {
-					errString += "There is no Telegraf config for profile " + i + " for this ACX version.</br>"
-				}
 			}
 		case "ex":
 			if len(allTele.ExCfg) == 0 {
+				valid = false
 				errString += "There is no Telegraf config for profile " + i + " for the EX platform.</br>"
-			} else {
-				if checkRouterSupport(allTele.ExCfg, version) {
-					valid = true
-				} else {
-					errString += "There is no Telegraf config for profile " + i + " for this EX version.</br>"
-				}
 			}
-		default:
-			errString += "There is no Telegraf config for profile " + i + " for the unknown platform.</br>"
 		}
 	}
 
@@ -673,26 +608,46 @@ func routeUptDoc(c echo.Context) error {
 
 	tele := ""
 	for _, v := range p.Definition.TelCfg.VmxCfg {
-		tele += "For VMX version " + v.Version + ": " + v.Config + "</br>"
+		if v.Version == "all" {
+			tele += "For VMX version " + v.Version + ": " + v.Config + "</br>"
+		} else {
+			tele += "For VMX version <=" + v.Version + ": " + v.Config + "</br>"
+		}
 	}
 	for _, v := range p.Definition.TelCfg.MxCfg {
-		tele += "For MX version " + v.Version + ": " + v.Config + "</br>"
+		if v.Version == "all" {
+			tele += "For MX version " + v.Version + ": " + v.Config + "</br>"
+		} else {
+			tele += "For MX version <=" + v.Version + ": " + v.Config + "</br>"
+		}
 	}
 	for _, v := range p.Definition.TelCfg.PtxCfg {
-		tele += "For PTX version " + v.Version + ": " + v.Config + "</br>"
+		if v.Version == "all" {
+			tele += "For PTX version " + v.Version + ": " + v.Config + "</br>"
+		} else {
+			tele += "For PTX version <=" + v.Version + ": " + v.Config + "</br>"
+		}
 	}
 	for i, v := range p.Definition.TelCfg.AcxCfg {
 		if i == len(p.Definition.TelCfg.AcxCfg)-1 {
-			tele += "For ACX version " + v.Version + ": " + v.Config
+			if v.Version == "all" {
+				tele += "For ACX version " + v.Version + ": " + v.Config
+			} else {
+				tele += "For ACX version <=" + v.Version + ": " + v.Config + "</br>"
+			}
 		} else {
-			tele += "For ACX version " + v.Version + ": " + v.Config + "</br>"
+			if v.Version == "all" {
+				tele += "For ACX version " + v.Version + ": " + v.Config + "</br>"
+			} else {
+				tele += "For ACX version <=" + v.Version + ": " + v.Config + "</br>"
+			}
 		}
 	}
-	for i, v := range p.Definition.TelCfg.ExCfg {
-		if i == len(p.Definition.TelCfg.ExCfg)-1 {
-			tele += "For EX version " + v.Version + ": " + v.Config
+	for _, v := range p.Definition.TelCfg.ExCfg {
+		if v.Version == "all" {
+			tele += "For ex version " + v.Version + ": " + v.Config + "</br>"
 		} else {
-			tele += "For EX version " + v.Version + ": " + v.Config + "</br>"
+			tele += "For ex version <=" + v.Version + ": " + v.Config + "</br>"
 		}
 	}
 	if tele == "" {
