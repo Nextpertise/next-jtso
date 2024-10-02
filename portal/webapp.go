@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"html/template"
 	"io"
 	"jtso/association"
@@ -188,7 +189,7 @@ func routeIndex(c echo.Context) error {
 			}
 		case "ex":
 			if r.Profile == 1 {
-				numEx++
+				numEX++
 			}
 		}
 	}
