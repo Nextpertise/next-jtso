@@ -375,7 +375,8 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 
 		// if cntr == 0 prefer shutdown the telegraf container
 		if cntr == 0 {
-			container.StopContainer("telegraf_" + f)
+			logger.Log.Infof("dit stomme script wil de container stoppen, maar dat mag NIET!")
+			//container.StopContainer("telegraf_" + f)
 		} else {
 			container.RestartContainer("telegraf_" + f)
 		}
