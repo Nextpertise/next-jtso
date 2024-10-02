@@ -134,9 +134,9 @@ func routeIndex(c echo.Context) error {
 			if container.State == "running" {
 				teleAcx = "ccffcc"
 			}
-		case "/telegrag_ex":
+		case "/telegraf_ex":
 			if container.State == "running" {
-				teleAcx = "ccffcc"
+				teleEx = "ccffcc"
 			}
 		case "/grafana":
 			if container.State == "running" {
