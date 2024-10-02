@@ -3,6 +3,7 @@ package xml
 import (
 	"encoding/xml"
 	"jtso/logger"
+	"strings"
 )
 
 type RawData struct {
@@ -127,10 +128,44 @@ type LacpDigest struct {
 func ParseVersion(s string) (*Version, error) {
 	logger.HandlePanic()
 	var i Version
+
 	// convert in byte array
 	b := []byte(s)
+
 	// unmarshall xml string
-	err := xml.Unmarshal(b, &i)
+	if strings.Contains(s, "<multi-routing-engine-results>") {
+		// QFX device format (with multi-routing-engine-results)
+		var multiResult struct {
+			Items []struct {
+				SoftwareInformation struct {
+					HostName     string `xml:"host-name"`
+					JunosVersion string `xml:"junos-version"`
+				} `xml:"software-information"`
+			} `xml:"multi-routing-engine-item"`
+		}
+		err := xml.Unmarshal(b, &multiResult)
+		if err != nil {
+			return nil, err
+		}
+		if len(multiResult.Items) > 0 {
+			i.Model = multiResult.Items[0].SoftwareInformation.HostName
+			i.Ver = multiResult.Items[0].SoftwareInformation.JunosVersion
+		}
+
+	} else {
+		// ACX device format (direct software-information)
+		var singleResult struct {
+			HostName     string `xml:"host-name"`
+			JunosVersion string `xml:"junos-version"`
+		}
+		err := xml.Unmarshal(b, &singleResult)
+		if err != nil {
+			return nil, err
+		}
+		i.Model = singleResult.HostName
+		i.Ver = singleResult.JunosVersion
+	}
+
 	return &i, err
 }
 

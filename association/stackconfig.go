@@ -19,6 +19,7 @@ const PATH_VMX string = "/var/shared/telegraf/vmx/telegraf.d/"
 const PATH_MX string = "/var/shared/telegraf/mx/telegraf.d/"
 const PATH_PTX string = "/var/shared//telegraf/ptx/telegraf.d/"
 const PATH_ACX string = "/var/shared//telegraf/acx/telegraf.d/"
+const PATH_EX string = "/var/shared//telegraf/ex/telegraf.d/"
 const PATH_GRAFANA string = "/var/shared/grafana/dashboards/"
 
 func CheckVersion(searchVersion string, routerVersion string) bool {
@@ -84,6 +85,7 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 		families[1] = "mx"
 		families[2] = "ptx"
 		families[3] = "acx"
+		families[4] = "ex"
 	} else {
 		families = make([]string, 1)
 		families[0] = family
@@ -131,6 +133,9 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 		case "acx":
 			readDirectory, _ = os.Open(PATH_ACX)
 			directory = PATH_ACX
+		case "ex":
+			readDirectory, _ = os.Open(PATH_EX)
+			directory = PATH_EX
 		}
 		allFiles, _ := readDirectory.Readdir(0)
 
@@ -162,6 +167,8 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 				filenames = ActiveProfiles[p].Definition.TelCfg.PtxCfg
 			case "acx":
 				filenames = ActiveProfiles[p].Definition.TelCfg.AcxCfg
+			case "ex":
+				filenames = ActiveProfiles[p].Definition.TelCfg.ExCfg
 			}
 			tls := false
 			skip := false

@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
@@ -112,7 +111,7 @@ func (w *WebApp) Run() {
 
 func routeIndex(c echo.Context) error {
 	grafanaPort := collectCfg.cfg.Grafana.Port
-	teleVmx, teleMx, telePtx, teleAcx, influx, grafana, kapacitor, jtso := "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc"
+	teleVmx, teleMx, telePtx, teleAcx, teleEx, influx, grafana, kapacitor, jtso := "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc", "f8cecc"
 	// check containers state
 
 	containers := container.ListContainers()
@@ -132,6 +131,10 @@ func routeIndex(c echo.Context) error {
 				telePtx = "ccffcc"
 			}
 		case "/telegraf_acx":
+			if container.State == "running" {
+				teleAcx = "ccffcc"
+			}
+		case "/telegrag_ex":
 			if container.State == "running" {
 				teleAcx = "ccffcc"
 			}
@@ -155,7 +158,7 @@ func routeIndex(c echo.Context) error {
 	}
 
 	// Retrive number of active routers per Telegraf
-	numVMX, numMX, numPTX, numACX := 0, 0, 0, 0
+	numVMX, numMX, numPTX, numACX, numEX := 0, 0, 0, 0, 0
 	for _, r := range sqlite.RtrList {
 		switch r.Family {
 		case "vmx":
@@ -173,6 +176,10 @@ func routeIndex(c echo.Context) error {
 		case "acx":
 			if r.Profile == 1 {
 				numACX++
+			}
+		case "ex":
+			if r.Profile == 1 {
+				numEX++
 			}
 		}
 	}
@@ -200,8 +207,8 @@ func routeIndex(c echo.Context) error {
 	// get the Telegraf version -
 	teleVersion := container.GetVersionLabel("jts_telegraf")
 
-	return c.Render(http.StatusOK, "index.html", map[string]interface{}{"TeleVmx": teleVmx, "TeleMx": teleMx, "TelePtx": telePtx, "TeleAcx": teleAcx,
-		"Grafana": grafana, "Kapacitor": kapacitor, "Influx": influx, "Jtso": jtso, "NumVMX": numVMX, "NumMX": numMX, "NumPTX": numPTX, "NumACX": numACX,
+	return c.Render(http.StatusOK, "index.html", map[string]interface{}{"TeleVmx": teleVmx, "TeleMx": teleMx, "TelePtx": telePtx, "TeleAcx": teleAcx, "TeleEx": teleEx,
+		"Grafana": grafana, "Kapacitor": kapacitor, "Influx": influx, "Jtso": jtso, "NumVMX": numVMX, "NumMX": numMX, "NumPTX": numPTX, "NumACX": numACX, "NumEX": numEX,
 		"GrafanaPort": grafanaPort, "JTS_VERS": jtsVersion, "JTSO_VERS": jtsoVersion, "JTS_TELE_VERS": teleVersion})
 }
 
@@ -461,6 +468,16 @@ func routeAddProfile(c echo.Context) error {
 					errString += "There is no Telegraf config for profile " + i + " for this ACX version.</br>"
 				}
 			}
+		case "ex":
+			if len(allTele.ExCfg) == 0 {
+				errString += "There is no Telegraf config for profile " + i + " for the EX platform.</br>"
+			} else {
+				if checkRouterSupport(allTele.ExCfg, version) {
+					valid = true
+				} else {
+					errString += "There is no Telegraf config for profile " + i + " for this EX version.</br>"
+				}
+			}
 		default:
 			errString += "There is no Telegraf config for profile " + i + " for the unknown platform.</br>"
 		}
@@ -670,6 +687,13 @@ func routeUptDoc(c echo.Context) error {
 		} else {
 			tele += "For ACX version " + v.Version + ": " + v.Config + "</br>"
 		}
+	for i, v := range p.Definition.TelCfg.ExCfg {
+		if i == len(p.Definition.TelCfg.ExCfg)-1 {
+			tele += "For EX version " + v.Version + ": " + v.Config
+		} else {
+			tele += "For EX version " + v.Version + ": " + v.Config + "</br>"
+		}
+
 	}
 	if tele == "" {
 		tele = "No Telegraf configuration attached to this profile"
