@@ -368,12 +368,12 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 
 	// Restart telegraf instance(s)
 	for _, f := range families {
-		logger.Log.Infof("Debug families: " + f)
+		logger.Log.Infof("Debug | families: " + f)
 
 		cntr := 0
 		for _, rtrs := range cfgHierarchy[f] {
 			for _, r := range rtrs {
-				logger.Log.Infof("Router: %s, Family: %s ", r.Shortname, r.Family)
+				logger.Log.Infof("Debug | Router: %s, Family: %s ", r.Shortname, r.Family)
 			}
 
 			cntr += len(rtrs)
