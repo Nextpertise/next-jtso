@@ -132,6 +132,8 @@ func ParseVersion(s string) (*Version, error) {
 	// Convert XML string to byte array
 	b := []byte(s)
 
+	logger.Log.Infof("debug response, %s", s)
+
 	// Unmarshal XML based on QFX or EX or ACX structure
 	if strings.Contains(s, "<multi-routing-engine-results>") {
 		// QFX/EX device format (with multi-routing-engine-results)
