@@ -142,7 +142,7 @@ func ParseVersion(s string) (*Version, error) {
 		var multiResult struct {
 			Items []struct {
 				SoftwareInformation struct {
-					HostName     string `xml:"host-name"`
+					//HostName     string `xml:"host-name"`
 					JunosVersion string `xml:"junos-version"`
 					ProductName  string `xml:"product-name"`
 				} `xml:"software-information"`

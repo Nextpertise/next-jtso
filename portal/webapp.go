@@ -301,7 +301,7 @@ func routeAddRouter(c echo.Context) error {
 	var f string
 	if strings.ToLower(string(reply.Model[0])) == "m" {
 		// increase size for family
-		f = strings.ToLower(string(reply.Model[0:3]))
+		f = strings.ToLower(string(reply.Model[0:2]))
 	} else {
 		f = strings.ToLower(string(reply.Model[0:3]))
 	}
