@@ -154,9 +154,9 @@ func ParseVersion(s string) (*Version, error) {
 		}
 		if len(multiResult.Items) > 0 {
 			localModelName := strings.IndexFunc(multiResult.Items[0].SoftwareInformation.ProductName, unicode.IsDigit)
+			i.Model = s[:localModelName]
 
 			//i.Model = multiResult.Items[0].SoftwareInformation.HostName
-			i.Model = s[:localModelName]
 			i.Ver = multiResult.Items[0].SoftwareInformation.JunosVersion
 		}
 
@@ -173,9 +173,6 @@ func ParseVersion(s string) (*Version, error) {
 		i.Model = singleResult.HostName
 		i.Ver = singleResult.JunosVersion
 	}
-
-	// debug voor family
-	logger.Log.Infof("parsed, %s", &i)
 
 	return &i, nil
 }
