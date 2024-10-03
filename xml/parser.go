@@ -3,8 +3,8 @@ package xml
 import (
 	"encoding/xml"
 	"jtso/logger"
+	"regexp"
 	"strings"
-	"unicode"
 )
 
 type RawData struct {
@@ -142,7 +142,7 @@ func ParseVersion(s string) (*Version, error) {
 		var multiResult struct {
 			Items []struct {
 				SoftwareInformation struct {
-					//HostName     string `xml:"host-name"`
+					HostName     string `xml:"host-name"`
 					JunosVersion string `xml:"junos-version"`
 					ProductName  string `xml:"product-name"`
 				} `xml:"software-information"`
@@ -153,8 +153,8 @@ func ParseVersion(s string) (*Version, error) {
 			return nil, err
 		}
 		if len(multiResult.Items) > 0 {
-			localModelName := strings.IndexFunc(multiResult.Items[0].SoftwareInformation.ProductName, unicode.IsDigit)
-			i.Model = s[:localModelName]
+			localModelRegexPattern := regexp.MustCompile(`\$.+?(?=[0-9])`)
+			i.Model = localModelRegexPattern.FindString(multiResult.Items[0].SoftwareInformation.ProductName)
 
 			//i.Model = multiResult.Items[0].SoftwareInformation.HostName
 			i.Ver = multiResult.Items[0].SoftwareInformation.JunosVersion
