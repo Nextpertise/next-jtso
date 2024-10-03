@@ -368,12 +368,12 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 
 	// Restart telegraf instance(s)
 	for _, f := range families {
-		logger.Log.Infof("Debug | families: " + f)
+		logger.Log.Infof("Found family: %s", f)
 
 		cntr := 0
 		for _, rtrs := range cfgHierarchy[f] {
 			for _, r := range rtrs {
-				logger.Log.Infof("Debug | Router: %s, Family: %s ", r.Shortname, r.Family)
+				logger.Log.Infof("Family: %s, Router: %s", r.Family, r.Shortname)
 			}
 
 			cntr += len(rtrs)
@@ -381,8 +381,8 @@ func ConfigueStack(cfg *config.ConfigContainer, family string) error {
 
 		// if cntr == 0 prefer shutdown the telegraf container
 		if cntr == 0 {
-			logger.Log.Infof("dit stomme script wil de container stoppen, maar dat mag NIET!")
-			//container.StopContainer("telegraf_" + f)
+			logger.Log.Infof("No devices found for this telegraf collector, stopping container")
+			container.StopContainer("telegraf_" + f)
 		} else {
 			container.RestartContainer("telegraf_" + f)
 		}

@@ -28,7 +28,7 @@ func Collect(cfg *config.ConfigContainer) {
 	// count the number of router with a profile assigned
 	numTasks := 0
 	for _, rtr := range sqlite.RtrList {
-		logger.Log.Infof("Debug | Router: %s, Family: %s ", rtr.Shortname, rtr.Family)
+		logger.Log.Infof("Found Router: %s, Family: %s, Model: %s", rtr.Shortname, rtr.Family, rtr.Model)
 
 		if rtr.Profile == 1 {
 			numTasks++
