@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"jtso/logger"
 	"strings"
+	"unicode"
 )
 
 type RawData struct {
@@ -132,6 +133,7 @@ func ParseVersion(s string) (*Version, error) {
 	// Convert XML string to byte array
 	b := []byte(s)
 
+	// voor debug om de family te vinden
 	logger.Log.Infof("debug response, %s", s)
 
 	// Unmarshal XML based on QFX or EX or ACX structure
@@ -142,6 +144,7 @@ func ParseVersion(s string) (*Version, error) {
 				SoftwareInformation struct {
 					HostName     string `xml:"host-name"`
 					JunosVersion string `xml:"junos-version"`
+					ProductName  string `xml:"product-name"`
 				} `xml:"software-information"`
 			} `xml:"multi-routing-engine-item"`
 		}
@@ -150,7 +153,10 @@ func ParseVersion(s string) (*Version, error) {
 			return nil, err
 		}
 		if len(multiResult.Items) > 0 {
-			i.Model = multiResult.Items[0].SoftwareInformation.HostName
+			localModelName := strings.IndexFunc(multiResult.Items[0].SoftwareInformation.ProductName, unicode.IsDigit)
+
+			//i.Model = multiResult.Items[0].SoftwareInformation.HostName
+			i.Model = s[:localModelName]
 			i.Ver = multiResult.Items[0].SoftwareInformation.JunosVersion
 		}
 
@@ -167,6 +173,9 @@ func ParseVersion(s string) (*Version, error) {
 		i.Model = singleResult.HostName
 		i.Ver = singleResult.JunosVersion
 	}
+
+	// debug voor family
+	logger.Log.Infof("parsed, %s", &i)
 
 	return &i, nil
 }
