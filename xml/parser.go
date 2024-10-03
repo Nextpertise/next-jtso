@@ -153,7 +153,7 @@ func ParseVersion(s string) (*Version, error) {
 			return nil, err
 		}
 		if len(multiResult.Items) > 0 {
-			localModelRegexPattern := regexp.MustCompile(`\$.+?(?=[0-9])`)
+			localModelRegexPattern := regexp.MustCompile(`^[aA-zZ]*`)
 			i.Model = localModelRegexPattern.FindString(multiResult.Items[0].SoftwareInformation.ProductName)
 
 			//i.Model = multiResult.Items[0].SoftwareInformation.HostName
