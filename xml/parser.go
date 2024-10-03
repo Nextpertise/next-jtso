@@ -142,7 +142,7 @@ func ParseVersion(s string) (*Version, error) {
 		var multiResult struct {
 			Items []struct {
 				SoftwareInformation struct {
-					//HostName     string `xml:"host-name"`
+					HostName     string `xml:"host-name"`
 					JunosVersion string `xml:"junos-version"`
 					ProductName  string `xml:"product-name"`
 				} `xml:"software-information"`
@@ -155,6 +155,7 @@ func ParseVersion(s string) (*Version, error) {
 		if len(multiResult.Items) > 0 {
 			localModelRegexPattern := regexp.MustCompile(`^[aA-zZ]*`)
 			i.Model = localModelRegexPattern.FindString(multiResult.Items[0].SoftwareInformation.ProductName)
+			logger.Log.Infof("EX/QFX Parsed model: %s", i.Model)
 
 			//i.Model = multiResult.Items[0].SoftwareInformation.HostName
 			i.Ver = multiResult.Items[0].SoftwareInformation.JunosVersion

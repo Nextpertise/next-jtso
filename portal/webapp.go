@@ -303,7 +303,10 @@ func routeAddRouter(c echo.Context) error {
 		// increase size for family
 		f = strings.ToLower(string(reply.Model[0:2]))
 	} else {
-		f = strings.ToLower(string(reply.Model[0:3]))
+		// temp fix voor model name
+		logger.Log.Infof("Model name: %s", reply.Model)
+		//f = strings.ToLower(string(reply.Model[0:3]))
+		f = strings.ToLower(string(reply.Model))
 	}
 	err = sqlite.AddRouter(r.Hostname, r.Shortname, f, reply.Model, reply.Ver)
 	if err != nil {
