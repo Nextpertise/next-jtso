@@ -25,7 +25,7 @@ var (
 
 func init() {
 	flag.StringVar(&ConfigFile, "config", "/etc/jtso/config.yml", "YAML configuration file path")
-	flag.BoolVar(&logger.Verbose, "verbose", false, "Enable verbose in the console")
+	flag.BoolVar(&logger.Verbose, "verbose", true, "Enable verbose in the console")
 }
 
 const banner = `

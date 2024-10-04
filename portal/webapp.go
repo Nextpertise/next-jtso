@@ -529,6 +529,7 @@ func routeStream(c echo.Context) error {
 					}
 				} else {
 					logger.Log.Errorf("Unexpected gnmi error: %v", errString)
+					logger.Log.Errorf("GNMI Error: %v", parser.StreamObj)
 					parser.StreamData(fmt.Sprintf("Unexpected gnmi error: %s", errString), "ERROR")
 				}
 
