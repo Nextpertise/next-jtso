@@ -168,6 +168,8 @@ func (r *RouterTask) Work() error {
 		rawData.LacpInfo, rawData.LacpDigest, err = xml.ParseLacp(reply.Data)
 		if err != nil {
 			logger.Log.Warnf("[%s] Unable to parse LACP Interface: %v", r.Name, err)
+			//	temp verbose logging todo: remove
+			logger.Log.Warnf(reply.RawReply)
 		} else {
 			hasLacp = true
 		}
